@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    html,
+    body {
+      font-size: 12px;
+      font-family: "Open Sans";
+      background: white;
+    }
+
+    .controls {
+      padding: 6px 16px;
+      border-radius: 5px;
+      background: #424242;
+      color: #f0f0f0;
+      display: inline-block;
+      width: 288px;
+      white-space: nowrap;
+    }
+
+    .controls input {
+      width: 200px;
+    }
+
+    .controls span,
+    .controls input {
+      vertical-align: middle;
+      padding: 0;
+      margin: 0;
+    }
+
+    #reduction {
+      margin-top: 4px;
+      margin-bottom: 2px;
+      width: 288px;
+      height: 2px;
+      background: green;
+    }
+
+    a {
+      text-decoration: none;
+      color: #666;
+    }
+
+    p {
+      color: #CCC;
+    }
+
+    audio {
+      width: 320px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>调节响度</h1>
+  <div class="controls"> <span>Maximize</span> <input type="range" value="0" step="1" min="-180" max="260"
+      oninput="maximize(this.value);"> <span class="value" id="maximize-db">6</span> <span class="unit">dB</span>
+    <div id="reduction"></div>
+  </div>
+  <div>
+    <h3><a href="http://www.audiotool.com/track/never-ending_passion/" target="audiotool">Never-ending Passion</a> by
+      The Three Pauls</h3> <audio id="audio" crossorigin controls loop="loop">
+      <source src="./125hz.wav" type="audio/wav">
+    </audio>
+    <h2>切换音频</h2>
+    <select id="select">
+      <option value="0">125Hz</option>
+      <option value="1">250Hz</option>
+      <option value="2">500Hz</option>
+      <option value="3">1000Hz</option>
+      <option value="4">2000Hz</option>
+      <option value="5">4000Hz</option>
+      <option value="6">8000Hz</option>
+      <option value="7">练习</option>
+      <option value="8">List0001</option>
+      <option value="9">List0002</option>
+      <option value="10">List0003</option>
+      <option value="11">List0004</option>
+      <option value="12">List0006</option>
+      <option value="13">List0007</option>
+      <option value="14">List0008</option>
+      <option value="15">List0009</option>
+      <option value="16">List00010</option>
+    </select>
+  </div>
+  <p>Does not work in Safari.</p>
+  <script>
+    var context = new AudioContext();
+    var audio = document.getElementById('audio');
+    console.log()
+    var label = document.getElementById('maximize-db');
+    var reduction = document.getElementById('reduction');
+    var source = context.createMediaElementSource(audio);
+    var preGain = context.createGain();
+    var limiter = context.createDynamicsCompressor();
+    limiter.threshold.value = 0.0;
+    // this is the pitfall, leave some headroom
+    limiter.knee.value = 0.0; // brute force
+    limiter.ratio.value = 20.0; // max compression
+    limiter.attack.value = 0.005; // 5ms attack
+    limiter.release.value = 0.050; // 50ms release
+    source.connect(preGain);
+    preGain.connect(limiter);
+    limiter.connect(context.destination);
+    var dbToGain = function (db) { return Math.exp(db * Math.log(10.0) / 20.0); }
+    var maximize = (function (db) {
+      preGain.gain.value = dbToGain(db);
+      label.textContent = db;
+      console.log(arguments.callee, 'arguments.callee')
+      return arguments.callee;
+    })(0);
+    var showReduction = (function () {
+      reduction.style.width = (dbToGain(limiter.reduction.value) * 288) + "px";
+      window.requestAnimationFrame(arguments.callee);
+    })();
+    var select = document.getElementById('select')
+    var audios = ['./125hz.wav', './250hz.wav', './500hz.wav', './1000hz.wav', './2000hz.wav', './4000hz.wav', './8000hz.wav', './练习.wav', './List0001.wav', './List0002.wav', './List0003.wav', './List0004.wav',
+      './List0006.wav', './List0007.wav', './List0008.wav', './List0009.wav', './List0010.wav']
+    select.addEventListener('change', function (e) {
+      console.log(e.target.value)
+      audio.pause()
+      audio.firstElementChild.src = audios[e.target.value]
+      audio.load()
+      audio.play()
+    })
+
+  </script>
+</body>
+
+</html>
